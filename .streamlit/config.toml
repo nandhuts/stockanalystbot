@@ -1,0 +1,12 @@
+[theme]
+primaryColor = "#00E5FF" # Neon Cyan
+backgroundColor = "#0B0F17" # Deep dark blue-black
+secondaryBackgroundColor = "#161F30" # Slate blue-grey
+textColor = "#F1F5F9" # Slate white
+font = "sans serif"
+
+[server]
+port = 8501
+headless = true
+enableCORS = false
+enableXsrfProtection = false
