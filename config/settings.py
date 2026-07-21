@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     APP_PORT: int = Field(default=8000, description="Web API serving port")
     APP_HOST: str = Field(default="127.0.0.1", description="Web API listening host")
 
+    # Telegram Bot configurations
+    TELEGRAM_BOT_TOKEN: str | None = Field(default=None, description="Telegram bot API token")
+    TELEGRAM_CHAT_ID: str | None = Field(default=None, description="Telegram chat ID for morning reports")
+
 
 # Instantiate settings singleton
 settings = Settings()
