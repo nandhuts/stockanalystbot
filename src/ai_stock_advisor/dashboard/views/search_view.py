@@ -50,9 +50,9 @@ def render_search() -> None:
                 st.error(f"Analysis failed for ticker '{custom_symbol}': {exc}")
                 return
 
-        # Render Score Badge and Metrics
+        # Render Score Badge, ML Probability, and Metrics
         st.markdown("---")
-        c1, c2 = st.columns([1, 2])
+        c1, c2, c3 = st.columns([1, 1, 2])
         
         with c1:
             score = int(score_dict["Score"])
@@ -69,15 +69,47 @@ def render_search() -> None:
             st.markdown(
                 f"""
                 <div class='metric-card' style='border-top: 5px solid {border_color}; text-align:center; min-height: 200px; display:flex; flex-direction:column; justify-content:center;'>
-                    <div style='font-size:0.9rem; color:#94A3B8; font-weight:500;'>RATING SCORE</div>
-                    <div style='font-size:3.5rem; font-weight:800; color:{border_color}; margin: 10px 0;'>{score}</div>
-                    <div style='font-size:0.95rem; font-weight:600; color:#F1F5F9;'>{status_text}</div>
+                    <div style='font-size:0.8rem; color:#94A3B8; font-weight:500; text-transform:uppercase;'>Rating Score</div>
+                    <div style='font-size:3.2rem; font-weight:800; color:{border_color}; margin: 5px 0;'>{score}</div>
+                    <div style='font-size:0.85rem; font-weight:600; color:#F1F5F9;'>{status_text}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
             
         with c2:
+            # Predict ML upward probability
+            from ai_stock_advisor.ml.pipeline import StockMLPipeline
+            try:
+                pipeline = StockMLPipeline()
+                ml_prob = pipeline.predict_probability(custom_symbol)
+                ml_text = f"{ml_prob:.1f}%"
+                if ml_prob >= 65.0:
+                    ml_color = "#10B981"
+                    ml_status = "High Upward Prob"
+                elif ml_prob >= 45.0:
+                    ml_color = "#00E5FF"
+                    ml_status = "Moderate Upward Prob"
+                else:
+                    ml_color = "#EF4444"
+                    ml_status = "Low Upward Prob"
+            except Exception as exc:
+                ml_color = "#64748B"
+                ml_text = "N/A"
+                ml_status = "Model Untrained"
+
+            st.markdown(
+                f"""
+                <div class='metric-card' style='border-top: 5px solid {ml_color}; text-align:center; min-height: 200px; display:flex; flex-direction:column; justify-content:center;'>
+                    <div style='font-size:0.8rem; color:#94A3B8; font-weight:500; text-transform:uppercase;'>ML Probability (5D)</div>
+                    <div style='font-size:3.2rem; font-weight:800; color:{ml_color}; margin: 5px 0;'>{ml_text}</div>
+                    <div style='font-size:0.85rem; font-weight:600; color:#F1F5F9;'>{ml_status}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            
+        with c3:
             st.markdown(f"#### {custom_symbol} Technical Profile")
             st.markdown(f"**Latest Close Price: ₹{score_dict['Close']:.2f}**")
             

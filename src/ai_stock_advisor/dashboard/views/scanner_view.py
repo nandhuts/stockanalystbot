@@ -104,5 +104,51 @@ def render_scanner() -> None:
             use_container_width=True,
             hide_index=True
         )
+
+        # ----------------------------------------------------
+        # NEW SECTION: AI Machine Learning Models
+        # ----------------------------------------------------
+        st.markdown("---")
+        st.markdown("### AI Machine Learning Models")
+        st.markdown(
+            "<p style='color:#94A3B8;'>Train Random Forest, XGBoost, and LightGBM models on historical index indicators to predict 5-day upward movements.</p>",
+            unsafe_allow_html=True
+        )
+        
+        c_ml1, c_ml2 = st.columns([1, 2])
+        with c_ml1:
+            train_ml_btn = st.button("🤖 Train ML Ensemble Models", use_container_width=True)
+            
+        cv_report_path = Path(settings.BASE_DIR) / "data" / "models" / "cv_metrics.csv"
+        
+        if train_ml_btn:
+            with st.spinner("Preparing datasets and executing 5-fold cross-validation..."):
+                try:
+                    from ai_stock_advisor.ml.pipeline import StockMLPipeline
+                    pipeline = StockMLPipeline()
+                    report = pipeline.train_and_evaluate()
+                    st.success("🎉 ML Ensemble models trained and saved successfully!")
+                except Exception as exc:
+                    st.error(f"ML Pipeline execution failed: {exc}")
+
+        if cv_report_path.exists():
+            try:
+                cv_df = pd.read_csv(cv_report_path)
+                cv_df = cv_df.rename(columns={"Unnamed: 0": "Classifier Model"})
+                st.markdown("##### 5-Fold Cross-Validation Metrics Summary:")
+                st.dataframe(
+                    cv_df,
+                    column_config={
+                        "Classifier Model": "Classifier Model",
+                        "precision": st.column_config.NumberColumn("Precision", format="%.3f"),
+                        "recall": st.column_config.NumberColumn("Recall", format="%.3f"),
+                        "f1": st.column_config.NumberColumn("F1-Score", format="%.3f"),
+                        "auc": st.column_config.NumberColumn("ROC-AUC", format="%.3f"),
+                    },
+                    use_container_width=True,
+                    hide_index=True
+                )
+            except Exception as exc:
+                st.warning(f"Failed loading CV report file: {exc}")
     else:
         st.info("No scanning logs found. Click the button above to run your first index scan!")
