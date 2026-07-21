@@ -28,6 +28,7 @@ from ai_stock_advisor.dashboard.views.top_stocks_view import render_top_stocks
 from ai_stock_advisor.dashboard.views.charts_view import render_charts
 from ai_stock_advisor.dashboard.views.search_view import render_search
 from ai_stock_advisor.dashboard.views.backtest_view import render_backtester
+from ai_stock_advisor.dashboard.views.chat_view import render_chat_assistant
 
 # Inject custom premium CSS styles
 st.markdown(
@@ -112,6 +113,7 @@ navigation_menu = {
     "📊 Technical Charts": "charts",
     "🔎 Query Custom Symbol": "search",
     "📈 Strategy Backtester": "backtest",
+    "💬 AI Chat Advisor": "chat",
 }
 
 selection = st.sidebar.radio(
@@ -138,3 +140,5 @@ elif selected_page == "search":
     render_search()
 elif selected_page == "backtest":
     render_backtester()
+elif selected_page == "chat":
+    render_chat_assistant()

@@ -17,6 +17,7 @@ from ai_stock_advisor.services.llm.option_advisor import (
     OptionSentimentEnum,
     OptionTradeSuggestion,
 )
+from ai_stock_advisor.services.llm.chat_assistant import AIChatAssistantClient
 
 __all__ = [
     "LLMAnalysisClient",
@@ -29,4 +30,5 @@ __all__ = [
     "AIOptionAdvisorClient",
     "OptionSentimentEnum",
     "OptionTradeSuggestion",
+    "AIChatAssistantClient",
 ]
