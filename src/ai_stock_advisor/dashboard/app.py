@@ -27,6 +27,7 @@ from ai_stock_advisor.dashboard.views.scanner_view import render_scanner
 from ai_stock_advisor.dashboard.views.top_stocks_view import render_top_stocks
 from ai_stock_advisor.dashboard.views.charts_view import render_charts
 from ai_stock_advisor.dashboard.views.search_view import render_search
+from ai_stock_advisor.dashboard.views.backtest_view import render_backtester
 
 # Inject custom premium CSS styles
 st.markdown(
@@ -110,6 +111,7 @@ navigation_menu = {
     "🏆 Top Bullish Stocks": "top_stocks",
     "📊 Technical Charts": "charts",
     "🔎 Query Custom Symbol": "search",
+    "📈 Strategy Backtester": "backtest",
 }
 
 selection = st.sidebar.radio(
@@ -134,3 +136,5 @@ elif selected_page == "charts":
     render_charts()
 elif selected_page == "search":
     render_search()
+elif selected_page == "backtest":
+    render_backtester()
