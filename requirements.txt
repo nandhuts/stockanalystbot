@@ -1,0 +1,10 @@
+# Core validation & environment configs
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.1
+
+# External API wrappers
+yfinance>=0.2.38
+google-generativeai>=0.5.0
+openai>=1.20.0
+requests>=2.31.0
