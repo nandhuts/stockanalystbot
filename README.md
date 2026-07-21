@@ -1,6 +1,6 @@
 # AI Stock Advisor 📈🤖
 
-A production-ready, modular AI-powered Stock Advisor layout built on Python 3.12. This project forms the architectural foundation for a multi-agent financial analyst and advisory application.
+A production-ready, modular AI-powered Stock Advisor and Derivatives Analyzer built on Python 3.12. This project forms the architectural foundation for a multi-agent financial analyst, offering index scanners, option chain analysis, news sentiment classification, machine learning probability models, backtesting engines, and a conversational chat advisor.
 
 ---
 
@@ -11,80 +11,97 @@ The project follows a standard `src`-layout structure (PEP 517/518 compliance) w
 Below is an overview of the key directories:
 
 ### 📂 Root Directory Configurations
-- **`.github/workflows/`**: Continuous Integration workflows. Configured for lint checks, formatting validations, and automated unit testing on code commits.
-- **`config/`**: Central application configurations. Contains [settings.py](file:///C:/Users/anand/.gemini/antigravity/scratch/ai_stock_advisor/config/settings.py) for validating variables using `pydantic-settings` and [logging_config.py](file:///C:/Users/anand/.gemini/antigravity/scratch/ai_stock_advisor/config/logging_config.py) for managing rotational file and console logs.
-- **`data/`**: Ignored placeholder directory for storing offline data caches, model snapshots, or stock databases.
-- **`docs/`**: Holds developer documentation, architecture diagrams, and service definitions.
-- **`logs/`**: Ignored folder containing the runtime execution output log file (`app.log`).
-- **`tests/`**: Contains the full test suite matching the application design:
-  - `conftest.py`: Shared testing hooks, fixtures, and environment mocks.
-  - `unit/`: Direct testing of standalone functions, exceptions, and properties.
-  - `integration/`: End-to-end service and model communication testing.
+- **`.github/workflows/`**: Continuous Integration workflows. Runs Ruff lints, Mypy type-checks, and automated Pytest unit testing on commits and PRs.
+- **`config/`**: Central configs. Contains [settings.py](file:///C:/Users/anand/.gemini/antigravity/scratch/ai_stock_advisor/config/settings.py) for variables validation and [logging_config.py](file:///C:/Users/anand/.gemini/antigravity/scratch/ai_stock_advisor/config/logging_config.py) for log management.
+- **`data/`**: Stores data caches, model files, SQLite databases, and scan reports.
+- **`tests/`**: Contains the full unit testing suite.
 
 ### 📂 Source Code (`src/ai_stock_advisor/`)
 The primary source code is modularized into dedicated domain layers:
-- **`core/`**: Core utilities, base classes, security policies, and application-wide domain error classes ([exceptions.py](file:///C:/Users/anand/.gemini/antigravity/scratch/ai_stock_advisor/src/ai_stock_advisor/core/exceptions.py)).
-- **`agents/`**: Domain reasoning actors (e.g. market analyst, advisor, portfolio planner). Contains logic definitions and prompts.
+- **`core/`**: Custom mathematical engines:
+  - `indicators.py`: Calculations for EMAs, RSI, MACD, Bollinger Bands, ATR, VWAP, and ADX.
+  - `scanner.py`: Trend ratings scan orchestrator.
+  - `ranker.py`: Quantitative multi-factor probability ranker.
+  - `options.py`: Option chain Put-Call Ratio (PCR) and Max Pain calculators.
+  - `backtester.py`: 5-year strategy simulation backtest engine.
 - **`services/`**: Integration layers with third-party APIs:
-  - `llm/`: Handlers for sending prompt context to providers (e.g. Gemini, OpenAI).
-  - `market_data/`: Client classes for querying stock prices and statement details.
-- **`models/`**: Domain entities and parsing schemas using Pydantic.
-- **`utils/`**: Shared functions for date formatting, calculation helpers, and math.
+  - `llm/`: Handlers for OpenAI completions, structured technical report analysis, news sentiment summaries, options trading recommendations, and chat advisor.
+  - `market_data/`: Client classes for querying stock prices via `yfinance`.
+- **`ml/`**: Machine Learning pipeline for training Random Forest, XGBoost, and LightGBM models.
+- **`db/`**: SQLite database layer managing SQLAlchemy models.
+- **`api/`**: FastAPI REST API endpoints protected via JWT Bearer tokens.
+- **`telegram/`**: Active Telegram Bot client exposing advisor commands.
+- **`dashboard/`**: Streamlit dashboard UI app.
 
 ---
 
-## Developer Getting Started Guide
+## REST API & JWT Authentication Workflow
 
-### Prerequisites
-- Python 3.12 (Verify version with `python --version`)
-- Git installed locally
+FastAPI exposes a secure, token-protected REST API on port `8000`:
 
-### 1. Repository Setup & Environment Variables
-If not already done, configure the environment variables:
+1. **Register User**:
+   - `POST /api/register`
+   - Payload: `{"username": "your_user", "password": "your_secure_password"}`
+2. **Retrieve Token**:
+   - `POST /api/token`
+   - Form Data: `username`, `password`
+   - Response returns a Bearer `access_token`.
+3. **Query Protected Data**:
+   Include the token in HTTP headers: `Authorization: Bearer <your_access_token>`.
+   - `GET /api/scanner`: Retrieve Nifty 50 scan scores.
+   - `GET /api/rankings`: Retrieve top 20 bullish stock picks.
+   - `GET /api/options/{ticker}`: Get PCR, Max Pain, and volatility SL/Targets.
+
+---
+
+## Containerization & Local Setup
+
+### 🐳 Docker & Docker Compose (Recommended)
+Run the entire production stack (FastAPI API and Streamlit Dashboard) inside Docker:
+
 ```bash
-# Clone or locate the directory
-cd C:\Users\anand\.gemini\antigravity\scratch\ai_stock_advisor
-
-# Copy the environment variable configuration template
-cp .env.example .env
+# Build images and launch multi-containers
+docker-compose up --build
 ```
-Open `.env` and fill in your actual API keys (`GEMINI_API_KEY` or `OPENAI_API_KEY`).
+- **API Swagger Documentation**: Open `http://localhost:8000/docs`
+- **Streamlit Advisor Dashboard**: Open `http://localhost:8501`
 
-### 2. Setting Up Virtual Environment
-Create and activate the virtual environment:
-```powershell
-# Create the virtual environment
-python -m venv .venv
+### 💻 Developer Local Environment Setup
 
-# Activate on Windows PowerShell
-.venv\Scripts\Activate.ps1
+1. **Repository Setup**:
+   ```bash
+   cp .env.example .env
+   ```
+   Add your `OPENAI_API_KEY` to the `.env` file to sign tokens and run AI models.
 
-# Or activate on Git Bash / Linux
-source .venv/Scripts/activate
-```
+2. **Virtual Environment**:
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1   # Windows PowerShell
+   source .venv/Scripts/activate # Git Bash / Linux
+   ```
 
-### 3. Installing Dependencies
-Install production and developer packages:
-```bash
-pip install -r requirements-dev.txt
-```
+3. **Install Packages**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 4. Running the Application
-Run the entry point main script (optionally passing a stock ticker):
-```bash
-python src/ai_stock_advisor/main.py GOOG
-```
+4. **Run Services Manually**:
+   - **FastAPI API**:
+     ```bash
+     uvicorn ai_stock_advisor.api.main:app --reload --port 8000
+     ```
+   - **Streamlit Dashboard**:
+     ```bash
+     streamlit run src/ai_stock_advisor/dashboard/app.py
+     ```
+   - **Telegram Bot**:
+     ```bash
+     python src/ai_stock_advisor/telegram/bot.py
+     ```
 
-### 5. Running Tests and Checks
-Validate configuration parsing and formatting rules:
-```bash
-# Run test suite
-pytest
-
-# Format & Linting checks
-ruff check .
-ruff format . --check
-
-# Strict Type validation
-mypy src tests
-```
+5. **Execute Test Suite**:
+   ```bash
+   # Run automated test scripts
+   pytest tests/ --cov=src --cov-report=term
+   ```
