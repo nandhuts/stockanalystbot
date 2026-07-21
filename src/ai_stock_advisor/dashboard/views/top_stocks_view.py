@@ -5,78 +5,78 @@ from config.settings import settings
 
 
 def render_top_stocks() -> None:
-    """Renders the Top Stocks page with a card grid of highly rated stocks."""
-    st.markdown("<h2 class='sub-title'>Top Bullish Signals</h2>", unsafe_allow_html=True)
+    """
+    Renders the Top Stocks page showing the Top 20 stocks
+    ranked by bullish breakout probability scores.
+    """
+    st.markdown("<h2 class='sub-title'>AI Stock Rankings (Top 20)</h2>", unsafe_allow_html=True)
     st.markdown(
-        "<p style='color:#94A3B8;'>Securities exhibiting the strongest bullish alignment (Score ≥ 70).</p>",
+        "<p style='color:#94A3B8;'>Top 20 securities ranked by their bullish trend probability scores, combining Trend, Momentum, and Volume factors.</p>",
         unsafe_allow_html=True,
     )
 
-    results_path = Path(settings.BASE_DIR) / "data" / "scan_results.csv"
+    results_path = Path(settings.BASE_DIR) / "data" / "rankings_results.csv"
 
+    # If rankings don't exist, try loading scanner data and running the ranker on it
     if not results_path.exists():
-        st.info("⚠️ Scan results not found. Run a scan from the **Market Scanner** page first.")
+        st.info("⚠️ Rankings data not found. Please navigate to the **Market Scanner** page and trigger a scan first to generate rankings.")
         return
 
     try:
         df = pd.read_csv(results_path)
     except Exception as exc:
-        st.error(f"Error loading scan results: {exc}")
+        st.error(f"Error loading stock rankings: {exc}")
         return
 
-    # Filter bullish stocks
-    top_df = df[df["Score"] >= 70]
-    
-    if top_df.empty:
-        st.markdown(
-            "<div style='background-color:#161F30; padding:20px; border-radius:8px; border:1px solid #1E293B; text-align:center;'>"
-            "<h5>No stocks met the strict bullish criterion (Score ≥ 70) in the latest scan.</h5>"
-            "<p style='color:#94A3B8; margin-top:10px;'>Consider lowering your criteria or executing a refresh on the scanner.</p>"
-            "</div>",
-            unsafe_allow_html=True
-        )
-        st.markdown("<br>##### Stocks with Moderate Bullish Momentum (Score ≥ 50):", unsafe_allow_html=True)
-        top_df = df[df["Score"] >= 50]
-        if top_df.empty:
-            st.info("No stocks with moderate bullish indicators found.")
-            return
+    if df.empty:
+        st.warning("The rankings list is currently empty. Run a scan to populate results.")
+        return
 
-    # Render a responsive card grid
-    # We display up to 9 cards in a 3-column layout
-    max_cards = 12
-    display_df = top_df.head(max_cards)
-    
+    st.markdown(f"Displaying the top **{len(df)}** securities sorted by bullish trend probability:")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Render a responsive card grid for the Top 20 stocks
     cols = st.columns(3)
     
-    for idx, (_, row) in enumerate(display_df.iterrows()):
+    for idx, (_, row) in enumerate(df.iterrows()):
         col = cols[idx % 3]
         
         ticker = row["Ticker"]
-        score = int(row["Score"])
+        prob_score = float(row["Probability_Score"])
         close = float(row["Close"])
         rsi = float(row["RSI"])
         adx = float(row["ADX"])
         
-        # Build trigger badges
-        triggers = []
-        if row["Above_EMA20"]:
-            triggers.append("<span class='card-badge' style='background-color:rgba(0,229,255,0.15); color:#00E5FF;'>EMA20</span>")
-        if row["EMA_Crossover"]:
-            triggers.append("<span class='card-badge' style='background-color:rgba(16,185,129,0.15); color:#10B981;'>Bull Cross</span>")
-        if row["Volume_Spike"]:
-            triggers.append("<span class='card-badge' style='background-color:rgba(245,158,11,0.15); color:#F59E0B;'>Volume Surge</span>")
-            
-        triggers_html = " ".join(triggers) if triggers else "<span style='color:#64748B;'>No trigger badges</span>"
+        # Color rating based on probability
+        if prob_score >= 75.0:
+            color = "#10B981"  # Emerald Green
+            bg_color = "rgba(16, 185, 129, 0.15)"
+        elif prob_score >= 50.0:
+            color = "#00E5FF"  # Neon Cyan
+            bg_color = "rgba(0, 229, 255, 0.15)"
+        else:
+            color = "#EF4444"  # Rose Red
+            bg_color = "rgba(239, 68, 68, 0.15)"
 
-        # Card body with glassmorphic styles
+        # Badges representing triggers
+        badges = []
+        if row["Above_EMA20"]:
+            badges.append("<span class='card-badge' style='background-color:rgba(0,229,255,0.12); color:#00E5FF;'>EMA20</span>")
+        if row["EMA_Crossover"]:
+            badges.append("<span class='card-badge' style='background-color:rgba(16,185,129,0.12); color:#10B981;'>EMA CROSS</span>")
+        if row["Volume_Spike"]:
+            badges.append("<span class='card-badge' style='background-color:rgba(245,158,11,0.12); color:#F59E0B;'>VOL SPIKE</span>")
+            
+        badges_html = " ".join(badges) if badges else "<span style='color:#64748B; font-size:0.8rem;'>No active triggers</span>"
+
         col.markdown(
             f"""
-            <div class='metric-card' style='border-top: 4px solid #10B981; min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;'>
+            <div class='metric-card' style='border-top: 4px solid {color}; min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;'>
                 <div>
                     <div style='display: flex; justify-content: space-between; align-items: center;'>
-                        <span style='font-size: 1.15rem; font-weight: 700; color:#F8FAFC;'>{ticker}</span>
-                        <span style='background-color: rgba(16,185,129,0.2); color:#10B981; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;'>
-                            {score} pts
+                        <span style='font-size: 1.15rem; font-weight: 700; color:#F8FAFC;'>#{idx + 1} {ticker}</span>
+                        <span style='background-color: {bg_color}; color: {color}; padding: 4px 10px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;'>
+                            {prob_score}% Prob
                         </span>
                     </div>
                     <div style='margin-top: 10px; font-size: 1.4rem; font-weight: 700; color:#00E5FF;'>
@@ -87,7 +87,7 @@ def render_top_stocks() -> None:
                     </div>
                 </div>
                 <div style='margin-top: 15px; border-top: 1px solid #1E293B; padding-top: 10px;'>
-                    {triggers_html}
+                    {badges_html}
                 </div>
             </div>
             """,

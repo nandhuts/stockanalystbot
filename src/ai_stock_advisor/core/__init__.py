@@ -1,5 +1,5 @@
 """
-Core modules containing base exceptions, indicators, stock scanners, and security tools.
+Core modules containing base exceptions, indicators, stock scanners, stock rankers, and security tools.
 """
 from ai_stock_advisor.core.exceptions import (
     StockAdvisorError,
@@ -11,6 +11,7 @@ from ai_stock_advisor.core.exceptions import (
 )
 from ai_stock_advisor.core.indicators import TechnicalIndicatorEngine
 from ai_stock_advisor.core.scanner import StockScanner
+from ai_stock_advisor.core.ranker import StockRanker
 
 __all__ = [
     "StockAdvisorError",
@@ -21,4 +22,5 @@ __all__ = [
     "InvalidTickerError",
     "TechnicalIndicatorEngine",
     "StockScanner",
+    "StockRanker",
 ]

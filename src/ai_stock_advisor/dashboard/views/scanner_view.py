@@ -47,7 +47,12 @@ def render_scanner() -> None:
                 # Execute scan
                 df_scan = scanner.scan(force_refresh=force_refresh)
                 
-                st.success(f"🎉 Scan completed successfully! Scanned {len(df_scan)} tickers.")
+                # Execute ranker to generate synchronized rankings_results.csv
+                from ai_stock_advisor.core.ranker import StockRanker
+                ranker = StockRanker(scanner)
+                ranker.rank_stocks(force_refresh=True)
+                
+                st.success(f"🎉 Scan and AI Rankings completed successfully! Processed {len(df_scan)} tickers.")
             except Exception as exc:
                 st.error(f"Scan operation failed: {exc}")
 
