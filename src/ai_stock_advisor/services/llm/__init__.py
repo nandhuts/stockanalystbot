@@ -12,6 +12,11 @@ from ai_stock_advisor.services.llm.news_analyzer import (
     NewsSentimentAnalysis,
     StockNewsReport,
 )
+from ai_stock_advisor.services.llm.option_advisor import (
+    AIOptionAdvisorClient,
+    OptionSentimentEnum,
+    OptionTradeSuggestion,
+)
 
 __all__ = [
     "LLMAnalysisClient",
@@ -21,4 +26,7 @@ __all__ = [
     "SentimentEnum",
     "NewsSentimentAnalysis",
     "StockNewsReport",
+    "AIOptionAdvisorClient",
+    "OptionSentimentEnum",
+    "OptionTradeSuggestion",
 ]

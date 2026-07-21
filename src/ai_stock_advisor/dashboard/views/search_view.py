@@ -209,6 +209,50 @@ def render_search() -> None:
                 unsafe_allow_html=True
             )
 
+            # AI Option Advisor Suggestion Block
+            from ai_stock_advisor.services.llm.option_advisor import AIOptionAdvisorClient, OptionSentimentEnum
+            
+            advisor_client = AIOptionAdvisorClient()
+            with st.spinner("AI Option Advisor analyzing parameters..."):
+                try:
+                    advice = advisor_client.generate_option_trade(custom_symbol, score_dict, opt_report)
+                except Exception as exc:
+                    st.warning(f"Failed loading AI Options advice: {exc}")
+                    advice = None
+
+            if advice:
+                sentiment_label = advice.sentiment.value
+                sentiment_color = "#10B981" if advice.sentiment == OptionSentimentEnum.BULLISH else "#EF4444" if advice.sentiment == OptionSentimentEnum.BEARISH else "#64748B"
+                bg_color = "rgba(16, 185, 129, 0.12)" if advice.sentiment == OptionSentimentEnum.BULLISH else "rgba(239, 68, 68, 0.12)" if advice.sentiment == OptionSentimentEnum.BEARISH else "rgba(100, 116, 139, 0.12)"
+                
+                st.markdown(
+                    f"""
+                    <div class='metric-card' style='border-top: 4px solid #00E5FF; padding: 20px; margin-top: 15px;'>
+                        <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;'>
+                            <span style='font-size:1.1rem; font-weight:700; color:#F8FAFC;'>🤖 AI Option Advisor Analysis</span>
+                            <span style='background-color:{bg_color}; color:{sentiment_color}; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;'>
+                                Probability: {advice.probability_score}% | {sentiment_label}
+                            </span>
+                        </div>
+                        <div style='margin-bottom:15px; background-color:#0B0F17; padding:12px; border-radius:6px; border:1px solid #1E293B;'>
+                            <div style='font-size:0.82rem; color:#94A3B8; font-weight:500; text-transform:uppercase;'>Recommended Action</div>
+                            <div style='font-size:1.25rem; font-weight:700; color:#00E5FF; margin-top:4px;'>
+                                {advice.suggested_strategy} (Strike: ₹{advice.strike_price:,.2f})
+                            </div>
+                            <div style='display:flex; gap:20px; margin-top:10px; font-size:0.88rem;'>
+                                <span style='color:#10B981;'>Target: <strong>₹{advice.target_price:,.2f}</strong></span>
+                                <span style='color:#EF4444;'>Stop Loss: <strong>₹{advice.stop_loss:,.2f}</strong></span>
+                            </div>
+                        </div>
+                        <div style='font-size:0.9rem; line-height:1.6; color:#CBD5E1;'>
+                            <strong>Thesis & Reasoning:</strong><br>
+                            <em>{advice.thesis_reasoning}</em>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
         # ----------------------------------------------------
         # NEW SECTION: AI News Sentiment Analyzer
         # ----------------------------------------------------
