@@ -124,3 +124,89 @@ def render_search() -> None:
         fig.update_yaxes(gridcolor="#1E293B", showline=True, linecolor="#1E293B")
         
         st.plotly_chart(fig, use_container_width=True)
+
+        # ----------------------------------------------------
+        # NEW SECTION: AI News Sentiment Analyzer
+        # ----------------------------------------------------
+        st.markdown("<br>##### Recent News Sentiment Analysis (AI Consolidated)", unsafe_allow_html=True)
+        
+        from ai_stock_advisor.services.llm.news_analyzer import NewsAnalyzer, SentimentEnum
+        
+        news_analyzer = NewsAnalyzer()
+        with st.spinner("Analyzing recent news headlines..."):
+            try:
+                report = news_analyzer.analyze_news(custom_symbol, max_articles=5)
+            except Exception as exc:
+                st.warning(f"Failed analyzing ticker news headlines: {exc}")
+                report = None
+
+        if report:
+            # Overall News Score Card
+            avg_score = report.average_sentiment_score
+            overall_sentiment = report.overall_sentiment.value
+            
+            if report.overall_sentiment == SentimentEnum.POSITIVE:
+                color = "#10B981"
+                bg_color = "rgba(16, 185, 129, 0.15)"
+            elif report.overall_sentiment == SentimentEnum.NEGATIVE:
+                color = "#EF4444"
+                bg_color = "rgba(239, 68, 68, 0.15)"
+            else:
+                color = "#64748B"
+                bg_color = "rgba(100, 116, 139, 0.15)"
+                
+            st.markdown(
+                f"""
+                <div class='metric-card' style='display:flex; align-items:center; justify-content:space-between; border-left: 5px solid {color}; padding: 15px 20px;'>
+                    <div>
+                        <div style='font-size:0.82rem; color:#94A3B8; font-weight:500;'>CONSOLIDATED SENTIMENT</div>
+                        <div style='font-size:1.35rem; font-weight:700; color:{color}; margin-top:5px;'>{overall_sentiment}</div>
+                    </div>
+                    <div style='text-align:right;'>
+                        <div style='font-size:0.82rem; color:#94A3B8; font-weight:500;'>POLARITY SCORE</div>
+                        <span style='background-color:{bg_color}; color:{color}; padding:4px 10px; border-radius:12px; font-weight:700; display:inline-block; margin-top:5px; font-size:1.15rem;'>
+                            {avg_score:+.2f}
+                        </span>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # Display individual articles in expanders
+            if not report.articles:
+                st.info("No news stories were parsed for this security.")
+            else:
+                for idx, article in enumerate(report.articles, 1):
+                    art_sentiment = article.sentiment.value
+                    art_score = article.sentiment_score
+                    
+                    if article.sentiment == SentimentEnum.POSITIVE:
+                        badge_color = "rgba(16, 185, 129, 0.15)"
+                        text_color = "#10B981"
+                    elif article.sentiment == SentimentEnum.NEGATIVE:
+                        badge_color = "rgba(239, 68, 68, 0.15)"
+                        text_color = "#EF4444"
+                    else:
+                        badge_color = "rgba(100, 116, 139, 0.15)"
+                        text_color = "#94A3B8"
+
+                    with st.expander(f"📰 {article.headline}"):
+                        st.markdown(
+                            f"""
+                            <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;'>
+                                <span class='card-badge' style='background-color:{badge_color}; color:{text_color}; font-size:0.75rem; font-weight:700;'>
+                                    {art_sentiment}
+                                </span>
+                                <span style='font-size:0.85rem; color:#94A3B8; font-weight:600;'>
+                                    Polarity: <strong style='color:{text_color};'>{art_score:+.2f}</strong>
+                                </span>
+                            </div>
+                            <p style='color:#E2E8F0; font-size:0.92rem; line-height:1.5; margin:0;'>
+                                <strong>AI Summary:</strong> <em>{article.summary}</em>
+                            </p>
+                            """,
+                            unsafe_allow_html=True
+                        )
+        else:
+            st.info("Could not fetch news sentiment for this stock ticker.")
