@@ -126,6 +126,90 @@ def render_search() -> None:
         st.plotly_chart(fig, use_container_width=True)
 
         # ----------------------------------------------------
+        # NEW SECTION: Option Chain Analysis
+        # ----------------------------------------------------
+        from ai_stock_advisor.core.options import OptionAnalyzer
+        opt_analyzer = OptionAnalyzer(client, engine)
+        
+        has_options = False
+        try:
+            opt_report = opt_analyzer.analyze_options(custom_symbol)
+            has_options = True
+        except Exception as exc:
+            has_options = False
+
+        if has_options and opt_report:
+            st.markdown("<br>##### Option Chain Sentiment (Nearest Expiry)", unsafe_allow_html=True)
+            
+            # Sub-panel layout: metric cards
+            c_opt1, c_opt2, c_opt3, c_opt4 = st.columns(4)
+            
+            with c_opt1:
+                pcr_val = opt_report["PCR"]
+                pcr_color = "#10B981" if pcr_val >= 1.25 else "#EF4444" if pcr_val <= 0.75 else "#00E5FF"
+                st.markdown(
+                    f"""
+                    <div class='metric-card' style='text-align:center;'>
+                        <div style='font-size:0.8rem; color:#94A3B8; font-weight:500;'>PUT-CALL RATIO (PCR)</div>
+                        <div style='font-size:1.6rem; font-weight:700; color:{pcr_color}; margin-top:5px;'>{pcr_val}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                
+            with c_opt2:
+                max_pain_val = opt_report["Max_Pain"]
+                st.markdown(
+                    f"""
+                    <div class='metric-card' style='text-align:center;'>
+                        <div style='font-size:0.8rem; color:#94A3B8; font-weight:500;'>MAX PAIN POINT</div>
+                        <div style='font-size:1.6rem; font-weight:700; color:#F1F5F9; margin-top:5px;'>₹{max_pain_val:,.2f}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                
+            with c_opt3:
+                atm_strike_val = opt_report["ATM_Strike"]
+                st.markdown(
+                    f"""
+                    <div class='metric-card' style='text-align:center;'>
+                        <div style='font-size:0.8rem; color:#94A3B8; font-weight:500;'>ATM STRIKE PRICE</div>
+                        <div style='font-size:1.6rem; font-weight:700; color:#F59E0B; margin-top:5px;'>₹{atm_strike_val:,.2f}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                
+            with c_opt4:
+                opt_sentiment = opt_report["Sentiment"]
+                opt_color = "#10B981" if opt_sentiment == "BULLISH" else "#EF4444" if opt_sentiment == "BEARISH" else "#64748B"
+                st.markdown(
+                    f"""
+                    <div class='metric-card' style='text-align:center;'>
+                        <div style='font-size:0.8rem; color:#94A3B8; font-weight:500;'>OPTION SENTIMENT</div>
+                        <div style='font-size:1.55rem; font-weight:700; color:{opt_color}; margin-top:5px;'>{opt_sentiment}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            # Recommendation Card
+            st.markdown(
+                f"""
+                <div class='metric-card' style='background-color:#161F30; border:1px solid #1E293B;'>
+                    <div style='font-weight:700; color:#00E5FF; font-size:1rem; margin-bottom:10px;'>💡 Volatility-Adjusted Trading Suggestion:</div>
+                    <div style='display:flex; justify-content:space-between; flex-wrap:wrap;'>
+                        <span style='color:#F8FAFC; font-size:0.92rem;'>• Action: <strong>{opt_report['Suggestion']} (Strike: {opt_report['Suggested_Strike']:.1f})</strong></span>
+                        <span style='color:#10B981; font-size:0.92rem;'>• Target Price: <strong>₹{opt_report['Target']:.2f}</strong></span>
+                        <span style='color:#EF4444; font-size:0.92rem;'>• Stop Loss Price: <strong>₹{opt_report['Stop_Loss']:.2f}</strong></span>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        # ----------------------------------------------------
         # NEW SECTION: AI News Sentiment Analyzer
         # ----------------------------------------------------
         st.markdown("<br>##### Recent News Sentiment Analysis (AI Consolidated)", unsafe_allow_html=True)
