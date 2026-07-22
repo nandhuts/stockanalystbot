@@ -28,6 +28,7 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/app:/app/src
 
 # Install system runtime libraries (LightGBM requires libgomp1)
 RUN apt-get update && apt-get install -y --no-install-recommends \
