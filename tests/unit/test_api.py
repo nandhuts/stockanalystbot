@@ -27,6 +27,12 @@ def test_register_user_success(test_client: TestClient, mock_db: MagicMock) -> N
     
     mock_db.query().filter().first.return_value = None  # User doesn't exist yet
     
+    from datetime import datetime
+    def mock_refresh_side_effect(user):
+        user.id = 1
+        user.created_at = datetime.utcnow()
+    mock_db.refresh.side_effect = mock_refresh_side_effect
+    
     payload = {"username": "test_trader", "password": "securepassword123"}
     response = test_client.post("/api/register", json=payload)
     

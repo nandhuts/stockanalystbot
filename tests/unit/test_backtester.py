@@ -32,7 +32,7 @@ def mock_backtest_data() -> pd.DataFrame:
         "Volume": [1000] * 60,
         "EMA_20": [98.0] * 60,
         "EMA_50": [97.0] * 60,
-        "RSI_14": [55.0] * 60,
+        "RSI_14": [40.0] * 60,
         "MACD": [1.5] * 60,
         "MACD_Signal": [1.0] * 60,
         "ATR_14": [2.0] * 60
@@ -40,6 +40,9 @@ def mock_backtest_data() -> pd.DataFrame:
     df = pd.DataFrame(data, index=dates)
     
     # Induce an entry trigger on index 10 (Close increases, RSI surges, MACD increases)
+    df.loc[df.index[10]:, "Open"] = 105.0
+    df.loc[df.index[10]:, "High"] = 106.0
+    df.loc[df.index[10]:, "Low"] = 104.0
     df.loc[df.index[10]:, "Close"] = 105.0
     df.loc[df.index[10]:, "EMA_20"] = 100.0
     df.loc[df.index[10]:, "EMA_50"] = 99.0

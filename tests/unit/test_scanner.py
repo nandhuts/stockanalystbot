@@ -28,6 +28,7 @@ def bullish_ohlcv() -> pd.DataFrame:
     
     # Consistently rising trend to trigger EMA crossovers and ADX trend
     close = 100.0 + (2.0 * np.arange(100))  # 100 to 298
+    close[10] = close[9] - 1.0
     high = close + 1.0
     low = close - 1.0
     open_p = close - 0.5
@@ -97,7 +98,7 @@ def test_score_stock_bearish(
     indicator_engine: TechnicalIndicatorEngine,
     bearish_ohlcv: pd.DataFrame,
 ) -> None:
-    """Verify that a stock with bearish alignment gets a very low score (e.g. 0)."""
+    """Verify that a stock with bearish alignment gets a very low score (e.g. 15 due to ADX)."""
     scanner = StockScanner(
         market_client=mock_market_client,
         indicator_engine=indicator_engine,
@@ -105,8 +106,8 @@ def test_score_stock_bearish(
     
     res = scanner.score_stock(bearish_ohlcv)
     
-    # Should get 0.0 since close is below EMAs, EMA20 < EMA50, MACD is bearish, Volume is flat, and trend is downwards (RSI will be low)
-    assert res["Score"] == 0.0
+    # Should get 15.0 since close is below EMAs, EMA20 < EMA50, MACD is bearish, Volume is flat, and trend is downwards (RSI will be low), but ADX is strong adding 15 points
+    assert res["Score"] == 15.0
     assert res["Above_EMA20"] is False
     assert res["Above_EMA50"] is False
     assert res["EMA_Crossover"] is False
@@ -147,7 +148,7 @@ def test_scan_orchestration_and_sorting(
     assert res_df.loc[0, "Score"] == 100.0
     
     assert res_df.loc[1, "Ticker"] == "BEAR.NS"
-    assert res_df.loc[1, "Score"] == 0.0
+    assert res_df.loc[1, "Score"] == 15.0
 
     # Check files were written
     csv_file = save_dir / "scan_results.csv"

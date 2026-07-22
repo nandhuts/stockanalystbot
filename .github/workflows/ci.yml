@@ -41,6 +41,7 @@ jobs:
         APP_ENV: testing
         OPENAI_API_KEY: mock_openai_api_key_for_testing
         GEMINI_API_KEY: mock_gemini_api_key_for_testing
+        TELEGRAM_BOT_TOKEN: "123456789:mock_telegram_bot_token_for_testing"
       run: |
         pytest tests/ --cov=src --cov-report=xml
 

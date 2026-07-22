@@ -9,24 +9,24 @@ from ai_stock_advisor.ml.pipeline import StockMLPipeline
 
 @pytest.fixture
 def mock_pipeline_data() -> pd.DataFrame:
-    """Generates 40 rows of synthetic OHLCV metrics."""
-    dates = pd.date_range(start="2026-06-01", periods=40, freq="D")
+    """Generates 60 rows of synthetic OHLCV metrics."""
+    dates = pd.date_range(start="2026-06-01", periods=60, freq="D")
     data = {
-        "Open": [100.0] * 40,
-        "High": [105.0] * 40,
-        "Low": [95.0] * 40,
-        "Close": [100.0 + i * 0.2 for i in range(40)],  # steadily increasing close prices
-        "Volume": [10000] * 40,
-        "EMA_20": [99.0] * 40,
-        "EMA_50": [98.0] * 40,
-        "EMA_200": [95.0] * 40,
-        "RSI_14": [55.0] * 40,
-        "MACD": [1.5] * 40,
-        "MACD_Signal": [1.0] * 40,
-        "MACD_Hist": [0.5] * 40,
-        "ADX_14": [28.0] * 40,
-        "Vol_MA20": [9000.0] * 40,
-        "ATR_14": [2.5] * 40
+        "Open": [100.0] * 60,
+        "High": [105.0] * 60,
+        "Low": [95.0] * 60,
+        "Close": [100.0 + i * 0.2 for i in range(60)],  # steadily increasing close prices
+        "Volume": [10000] * 60,
+        "EMA_20": [99.0] * 60,
+        "EMA_50": [98.0] * 60,
+        "EMA_200": [95.0] * 60,
+        "RSI_14": [55.0] * 60,
+        "MACD": [1.5] * 60,
+        "MACD_Signal": [1.0] * 60,
+        "MACD_Hist": [0.5] * 60,
+        "ADX_14": [28.0] * 60,
+        "Vol_MA20": [9000.0] * 60,
+        "ATR_14": [2.5] * 60
     }
     return pd.DataFrame(data, index=dates)
 
