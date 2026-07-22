@@ -6,10 +6,10 @@ echo 🖥️ Starting AI Stock Advisor Web Console Dashboard...
 echo =====================================================================
 echo.
 
-# Setup Python module search paths
+REM Setup Python module search paths
 set PYTHONPATH=.;src
 
-# Check if virtual environment exists
+REM Check if virtual environment exists
 if not exist ".venv\Scripts\activate.bat" (
     echo [ERROR] Virtual environment (.venv) not found!
     echo Please ensure Python 3.12 is installed and setup before launching.
@@ -17,7 +17,7 @@ if not exist ".venv\Scripts\activate.bat" (
     exit /b
 )
 
-# Activate environment and launch streamlit app
+REM Activate environment and launch streamlit app
 call .venv\Scripts\activate.bat
 streamlit run src/ai_stock_advisor/dashboard/app.py
 pause
