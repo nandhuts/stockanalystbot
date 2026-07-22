@@ -3,6 +3,16 @@ FastAPI REST API router entrypoint.
 Exposes endpoints for user registration, token generation, index scanners,
 ranked bullish pick lists, and option chain analytics.
 """
+import sys
+from pathlib import Path
+
+# Dynamically inject root and src paths to ensure standard resolution
+root_dir = Path(__file__).resolve().parents[3]
+src_dir = root_dir / "src"
+for p in [str(root_dir), str(src_dir)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from datetime import datetime
 import logging
 from pathlib import Path

@@ -3,8 +3,17 @@ Telegram Bot Entrypoint.
 Handles commands: /start, /help, /market, /topstocks, /stock, /news.
 Sets up a background scheduler thread to send pre-market reports every morning.
 """
-import logging
+import sys
 from pathlib import Path
+
+# Dynamically inject root and src paths to ensure standard resolution
+root_dir = Path(__file__).resolve().parents[3]
+src_dir = root_dir / "src"
+for p in [str(root_dir), str(src_dir)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+import logging
 import threading
 import time
 import telebot
