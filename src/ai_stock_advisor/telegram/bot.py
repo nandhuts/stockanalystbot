@@ -110,6 +110,7 @@ def run_scheduler_loop() -> None:
 @bot.message_handler(commands=["start", "help"])
 def handle_welcome(message: telebot.types.Message) -> None:
     """Welcomes the user and details available bot commands."""
+    print(f"[LOG] Received /start command from chat ID {message.chat.id}")
     welcome_text = (
         "👋 *Welcome to the AI Stock Advisor Telegram Bot!* 📈🤖\n\n"
         "Evaluate trends, compute scores, and pull news analyses for Nifty 50 NSE securities.\n\n"
@@ -273,17 +274,23 @@ def handle_stock_news_sentiment(message: telebot.types.Message) -> None:
 def main() -> None:
     """Launches the Telegram Bot listener and morning scheduler thread."""
     if not bot_token or bot_token == "mock_telegram_bot_token_for_testing":
+        print("[ERROR] TELEGRAM_BOT_TOKEN is not defined in .env!")
         logger.error("TELEGRAM_BOT_TOKEN environment variable is not defined. Bot cannot start.")
         return
 
-    logger.info("Initializing Telegram Bot listener...")
+    print("\n====================================================")
+    print("📈 AI Stock Advisor Telegram Bot is starting...")
+    print("====================================================")
     
     # Spin up morning report scheduler in daemon background thread
     scheduler_thread = threading.Thread(target=run_scheduler_loop, daemon=True)
     scheduler_thread.start()
+    print("[INFO] Daily morning pre-market report scheduler started.")
 
     # Start long polling
-    logger.info("Telegram Bot active and polling for messages...")
+    print("[SUCCESS] Bot is now active and polling for messages!")
+    print("Go to Telegram and search for @optiontradeanalystbot to start chatting.")
+    print("====================================================\n")
     bot.infinity_polling()
 
 
