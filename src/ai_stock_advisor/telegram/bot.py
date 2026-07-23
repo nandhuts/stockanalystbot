@@ -14,14 +14,18 @@ for p in [str(root_dir), str(src_dir)]:
         sys.path.insert(0, p)
 
 import logging
+from pathlib import Path
 import threading
 import time
+from datetime import datetime
+import json
 import telebot
 import schedule
 import pandas as pd
 
 from config.settings import settings
 from ai_stock_advisor.core.indicators import TechnicalIndicatorEngine
+from ai_stock_advisor.core.options import OptionAnalyzer
 from ai_stock_advisor.core.scanner import StockScanner
 from ai_stock_advisor.core.ranker import StockRanker
 from ai_stock_advisor.services.market_data.client import MarketDataClient
@@ -121,16 +125,28 @@ def run_scheduler_loop() -> None:
 def handle_welcome(message: telebot.types.Message) -> None:
     """Welcomes the user and details available bot commands."""
     print(f"[LOG] Received /start command from chat ID {message.chat.id}")
+    
+    # Persistent bot reply keyboard
+    markup = telebot.types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    btn_opportunities = telebot.types.KeyboardButton("🌅 Morning F&O Picks")
+    btn_market = telebot.types.KeyboardButton("📊 Nifty Scan Summary")
+    btn_topstocks = telebot.types.KeyboardButton("🏆 Top Bullish Stocks")
+    btn_option = telebot.types.KeyboardButton("💡 Option Recommendation")
+    markup.add(btn_opportunities, btn_market, btn_topstocks, btn_option)
+
     welcome_text = (
-        "👋 *Welcome to the AI Stock Advisor Telegram Bot!* 📈🤖\n\n"
-        "Evaluate trends, compute scores, and pull news analyses for Nifty 50 NSE securities.\n\n"
+        "👋 *Welcome to the AI Stock Advisor Terminal Bot!* 📈🤖\n\n"
+        "This bot is your professional derivatives scanner. Use the bottom keyboard buttons for quick reports or run commands directly.\n\n"
         "💬 *Available Command Interface*:\n"
-        "• /market - General overview stats of the latest scan.\n"
-        "• /topstocks - List the Top 10 stocks by breakout probability.\n"
-        "• /stock `<ticker>` - Evaluate technical profiles for any ticker (e.g. `/stock INFY.NS`).\n"
-        "• /news `<ticker>` - Summarize news sentiment for any ticker (e.g. `/news TCS.NS`)."
+        "• `/opportunities` - Top 10 pre-market F&O opportunity setups.\n"
+        "• `/option <ticker>` - Suggested call/put strikes and exits (e.g. `/option SBIN.NS`).\n"
+        "• `/market` - Overall Nifty 50 scan statistics.\n"
+        "• `/topstocks` - Top 10 ranked stocks by breakout probability.\n"
+        "• `/stock <ticker>` - Volatility-adjusted technical indicators (e.g. `/stock INFY.NS`).\n"
+        "• `/news <ticker>` - Overnight news sentiment classification (e.g. `/news TCS.NS`).\n\n"
+        "⚠️ _Disclosures: Trading derivatives involves high leverage and risk. Stop losses are recommended._"
     )
-    bot.reply_to(message, welcome_text)
+    bot.send_message(message.chat.id, welcome_text, reply_markup=markup, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=["market"])
@@ -275,6 +291,120 @@ def handle_stock_news_sentiment(message: telebot.types.Message) -> None:
         bot.reply_to(message, msg)
     except Exception as exc:
         bot.reply_to(message, f"❌ Failed generating news analysis for '{args}': {exc}")
+
+
+@bot.message_handler(commands=["option"])
+def handle_option_recommendation(message: telebot.types.Message) -> None:
+    """Runs option chain PCR, Max Pain, and volatility-adjusted SL/Target recommendations."""
+    args = telebot.util.extract_arguments(message.text).strip().upper()
+    if not args:
+        bot.reply_to(message, "⚠️ Please provide a ticker symbol (e.g. `/option INFY.NS` or `/option RELIANCE.NS`).")
+        return
+
+    bot.send_chat_action(message.chat.id, "typing")
+    
+    try:
+        client = MarketDataClient()
+        engine = TechnicalIndicatorEngine()
+        opt_analyzer = OptionAnalyzer(client, engine)
+        
+        # Calculate options sentiment report
+        report = opt_analyzer.analyze_options(args)
+        
+        sentiment_symbol = "🟢" if report["Sentiment"] == "BULLISH" else "🔴" if report["Sentiment"] == "BEARISH" else "🟡"
+        
+        trade_recommendation = (
+            f"💡 *Option Analysis: {report['Ticker']}*\n"
+            f"💰 *Current Spot Price*: ₹{report['Spot_Price']:,.2f}\n"
+            f"====================================\n\n"
+            f"🎯 *Derivative Outlook*: *{report['Sentiment']}* {sentiment_symbol}\n"
+            f"📢 *Suggested Action*: *{report['Suggestion']}*\n"
+            f"• *Recommended Strike*: {report['Suggested_Strike']} ({report['Sentiment']} ATM contract)\n"
+            f"• *Entry Boundary*: ₹{report['Spot_Price']:.2f}\n"
+            f"• *Target Limit*: ₹{report['Target']:.2f}\n"
+            f"• *Stop Loss*: ₹{report['Stop_Loss']:.2f}\n\n"
+            f"📊 *Option Chain Metrics*:\n"
+            f"• *Put-Call Ratio (PCR)*: {report['PCR']}\n"
+            f"• *Max Pain Strike*: ₹{report['Max_Pain']:.2f}\n"
+            f"• *Highest Call OI Strike*: ₹{report['Highest_OI_Call']['strike']:.2f} ({report['Highest_OI_Call']['oi']:,} contracts)\n"
+            f"• *Highest Put OI Strike*: ₹{report['Highest_OI_Put']['strike']:.2f} ({report['Highest_OI_Put']['oi']:,} contracts)\n"
+            f"• *ATM Implied Volatility (IV)*: {report['ATR']:.2f} (ATR Volatility Reference)\n\n"
+            f"⚠️ _Stop Loss limits are calculated dynamically using Average True Range (ATR)._"
+        )
+        bot.reply_to(message, trade_recommendation, parse_mode="Markdown")
+    except Exception as exc:
+        bot.reply_to(message, f"❌ Failed running option analysis for '{args}': {exc}")
+
+
+@bot.message_handler(commands=["opportunities"])
+def handle_opportunities(message: telebot.types.Message) -> None:
+    """Compiles and returns the Top 10 pre-market F&O opportunities list."""
+    bot.send_chat_action(message.chat.id, "typing")
+    
+    json_file = Path(settings.BASE_DIR) / "data" / "morning_opportunities.json"
+    if not json_file.exists():
+        bot.reply_to(
+            message,
+            "⚠️ *Pre-Market F&O Opportunities* are not generated yet.\n"
+            "Run a scan on the Web Dashboard to build the morning picks."
+        )
+        return
+
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            opportunities = json.load(f)
+            
+        if not opportunities:
+            bot.reply_to(message, "⚠️ No active pre-market F&O opportunities found.")
+            return
+
+        date_str = datetime.now().strftime("%d-%b-%Y")
+        msg = (
+            f"🌅 *TOP 10 F&O TRADING OPPORTUNITIES* 📈\n"
+            f"📅 *Scan Date*: {date_str}\n"
+            f"====================================\n\n"
+        )
+        
+        for idx, op in enumerate(opportunities[:10], 1):
+            emoji = "🟢" if op["Trend"] == "BULLISH" else "🔴"
+            msg += (
+                f"{idx}. *{op['Ticker']}* ({op['Trend']} {emoji})\n"
+                f"• *Entry*: ₹{op['Entry']:.2f} | *Stop Loss*: ₹{op['Stop_Loss']:.2f}\n"
+                f"• *Targets*: T1: ₹{op['Target_1']:.2f} | T2: ₹{op['Target_2']:.2f}\n"
+                f"• *Option*: Buy {op['Strike']} {op['Option_Type']} (Prem: {op['Premium_Range']})\n"
+                f"• *Score / Risk*: {op['Probability']}% Prob | {op['Risk_Level']} Risk\n\n"
+            )
+            
+        msg += "💡 _Run `/option <ticker>` to fetch live options PCR and Max Pain._"
+        bot.reply_to(message, msg, parse_mode="Markdown")
+        
+    except Exception as exc:
+        bot.reply_to(message, f"❌ Failed loading morning opportunities: {exc}")
+
+
+@bot.message_handler(func=lambda msg: msg.text in (
+    "🌅 Morning F&O Picks", 
+    "📊 Nifty Scan Summary", 
+    "🏆 Top Bullish Stocks", 
+    "💡 Option Recommendation"
+))
+def handle_keyboard_buttons(message: telebot.types.Message) -> None:
+    """Routes keyboard button clicks to corresponding handlers."""
+    txt = message.text
+    if txt == "🌅 Morning F&O Picks":
+        handle_opportunities(message)
+    elif txt == "📊 Nifty Scan Summary":
+        handle_market_summary(message)
+    elif txt == "🏆 Top Bullish Stocks":
+        handle_top_stocks(message)
+    elif txt == "💡 Option Recommendation":
+        msg = (
+            "💡 *Option Recommendation Finder*\n\n"
+            "To retrieve dynamic derivatives trade recommendations for any F&O security, please type the ticker symbol in this format:\n"
+            "`/option <ticker>` (e.g. `/option RELIANCE.NS` or `/option TATAMOTORS.NS`)\n\n"
+            "This will calculate support boundaries, Put-Call Ratio (PCR), Max Pain strikes, and output targets and stop losses."
+        )
+        bot.reply_to(message, msg, parse_mode="Markdown")
 
 
 # ==============================================================================

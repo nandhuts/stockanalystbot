@@ -104,3 +104,84 @@ def test_handle_top_stocks_command(
                 assert "Top 10 Bullish Stock Rankings" in reply_text
                 assert "INFY.NS" in reply_text
                 assert "TCS.NS" in reply_text
+
+
+def test_handle_opportunities_command() -> None:
+    """Verify `/opportunities` command loads pre-market json and formats correctly."""
+    from ai_stock_advisor.telegram.bot import handle_opportunities
+    from unittest.mock import mock_open
+    import json
+    
+    mock_message = MagicMock()
+    mock_message.text = "/opportunities"
+    mock_message.chat.id = 12345
+    
+    mock_json_data = [
+        {
+            "Ticker": "INFY.NS",
+            "Price": 1500.0,
+            "Trend": "BULLISH",
+            "Entry": 1500.0,
+            "Stop_Loss": 1450.0,
+            "Target_1": 1550.0,
+            "Target_2": 1600.0,
+            "Target_3": 1650.0,
+            "Risk_Reward": 2.0,
+            "Probability": 85.0,
+            "Confidence": 90.0,
+            "Risk_Level": "Low",
+            "Position_Size": "4% of capital",
+            "Option_Type": "CALL",
+            "Strike": 1500.0,
+            "Expiry": "26-Jul-2026",
+            "Premium_Range": "₹30 - ₹35",
+            "Explanation": "Breakout setup"
+        }
+    ]
+
+    with patch("pathlib.Path.exists", return_value=True):
+        with patch("builtins.open", mock_open(read_data=json.dumps(mock_json_data))):
+            with patch("ai_stock_advisor.telegram.bot.bot.send_chat_action") as mock_action:
+                with patch("ai_stock_advisor.telegram.bot.bot.reply_to") as mock_reply:
+                    handle_opportunities(mock_message)
+                    mock_reply.assert_called_once()
+                    reply_text = mock_reply.call_args[0][1]
+                    assert "TOP 10 F&O TRADING OPPORTUNITIES" in reply_text
+                    assert "INFY.NS" in reply_text
+                    assert "CALL" in reply_text
+
+
+def test_handle_option_recommendation_command() -> None:
+    """Verify `/option` command runs OptionAnalyzer and outputs target strikes."""
+    from ai_stock_advisor.telegram.bot import handle_option_recommendation
+    
+    mock_message = MagicMock()
+    mock_message.text = "/option INFY.NS"
+    mock_message.chat.id = 12345
+    
+    mock_report = {
+        "Ticker": "INFY.NS",
+        "Spot_Price": 1500.0,
+        "ATM_Strike": 1500.0,
+        "PCR": 1.35,
+        "Max_Pain": 1500.0,
+        "Sentiment": "BULLISH",
+        "Suggestion": "BUY CALL",
+        "Suggested_Strike": 1500.0,
+        "Target": 1550.0,
+        "Stop_Loss": 1450.0,
+        "ATR": 25.0,
+        "Highest_OI_Call": {"strike": 1520.0, "oi": 50000},
+        "Highest_OI_Put": {"strike": 1480.0, "oi": 40000}
+    }
+
+    with patch("ai_stock_advisor.telegram.bot.OptionAnalyzer.analyze_options", return_value=mock_report):
+        with patch("ai_stock_advisor.telegram.bot.bot.send_chat_action") as mock_action:
+            with patch("ai_stock_advisor.telegram.bot.bot.reply_to") as mock_reply:
+                handle_option_recommendation(mock_message)
+                mock_reply.assert_called_once()
+                reply_text = mock_reply.call_args[0][1]
+                assert "Option Analysis: INFY.NS" in reply_text
+                assert "Derivative Outlook" in reply_text
+                assert "BULLISH" in reply_text
+                assert "Max Pain Strike" in reply_text
