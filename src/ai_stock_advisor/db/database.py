@@ -7,7 +7,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 from typing import Any, Generator
-from sqlalchemy import Column, DateTime, Integer, String, create_engine
+from sqlalchemy import Column, DateTime, Integer, String, Float, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from config.settings import settings
@@ -38,6 +38,23 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DailyScan(Base):
+    """
+    DailyScan Table Schema.
+    Persists morning F&O opportunity scan details.
+    """
+    __tablename__ = "daily_scans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scan_date = Column(DateTime, default=datetime.utcnow, index=True)
+    ticker = Column(String, index=True, nullable=False)
+    indicators = Column(String, nullable=False)  # JSON-serialized indicator dictionary
+    news = Column(String, nullable=False)        # JSON-serialized news sentiment dictionary
+    options = Column(String, nullable=False)     # JSON-serialized option chain metrics dictionary
+    score = Column(Float, nullable=False, index=True)
+    recommendation = Column(String, nullable=False)  # JSON-serialized detailed suggestions (SL, Targets, position size, etc.)
 
 
 def get_db() -> Generator[Any, None, None]:

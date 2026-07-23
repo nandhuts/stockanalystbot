@@ -26,6 +26,7 @@ from ai_stock_advisor.core.scanner import StockScanner
 from ai_stock_advisor.core.ranker import StockRanker
 from ai_stock_advisor.services.market_data.client import MarketDataClient
 from ai_stock_advisor.services.llm.news_analyzer import NewsAnalyzer
+from ai_stock_advisor.scheduler.morning_scheduler import MorningScheduler
 
 logger = logging.getLogger("ai_stock_advisor.telegram")
 
@@ -291,10 +292,15 @@ def main() -> None:
     print("📈 AI Stock Advisor Telegram Bot is starting...")
     print("====================================================")
     
-    # Spin up morning report scheduler in daemon background thread
+    # Spin up daily morning report scheduler in daemon background thread
     scheduler_thread = threading.Thread(target=run_scheduler_loop, daemon=True)
     scheduler_thread.start()
     print("[INFO] Daily morning pre-market report scheduler started.")
+
+    # Spin up morning F&O opportunity scanner scheduler
+    fo_scheduler = MorningScheduler(bot)
+    fo_scheduler.start()
+    print("[INFO] Morning F&O opportunities pre-market scanner scheduler started.")
 
     # Start long polling
     print("[SUCCESS] Bot is now active and polling for messages!")

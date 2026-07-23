@@ -23,6 +23,7 @@ st.set_page_config(
 
 # Import View Panels
 from ai_stock_advisor.dashboard.views.dashboard_view import render_dashboard
+from ai_stock_advisor.dashboard.views.morning_opportunities_view import render_morning_opportunities
 from ai_stock_advisor.dashboard.views.scanner_view import render_scanner
 from ai_stock_advisor.dashboard.views.top_stocks_view import render_top_stocks
 from ai_stock_advisor.dashboard.views.charts_view import render_charts
@@ -108,6 +109,7 @@ st.sidebar.markdown(
 
 navigation_menu = {
     "🏠 Dashboard Summary": "dashboard",
+    "🌅 Morning Opportunities": "morning_opportunities",
     "🔍 Index Market Scanner": "scanner",
     "🏆 Top Bullish Stocks": "top_stocks",
     "📊 Technical Charts": "charts",
@@ -130,6 +132,8 @@ st.markdown("<h1 class='main-title'>AI Stock Advisor Terminal</h1>", unsafe_allo
 # Render Target Panels
 if selected_page == "dashboard":
     render_dashboard()
+elif selected_page == "morning_opportunities":
+    render_morning_opportunities()
 elif selected_page == "scanner":
     render_scanner()
 elif selected_page == "top_stocks":

@@ -172,10 +172,83 @@ class TechnicalIndicatorEngine:
         adx = dx.ewm(alpha=1 / period, adjust=False).mean()
         return adx.fillna(0.0)
 
+    @staticmethod
+    def calculate_supertrend(
+        df: pd.DataFrame, period: int = 10, multiplier: float = 3.0
+    ) -> pd.DataFrame:
+        """
+        Calculates Supertrend indicator.
+        Returns a DataFrame containing Supertrend (values) and Supertrend_Direction (1 for bullish, -1 for bearish).
+        """
+        high = df["High"]
+        low = df["Low"]
+        close = df["Close"]
+
+        # Calculate ATR for Supertrend band adjustment
+        atr = TechnicalIndicatorEngine.calculate_atr(df, period=period)
+
+        # Basic upper and lower bands
+        hl2 = (high + low) / 2.0
+        basic_ub = hl2 + (multiplier * atr)
+        basic_lb = hl2 - (multiplier * atr)
+
+        close_vals = close.values
+        basic_ub_vals = basic_ub.values
+        basic_lb_vals = basic_lb.values
+
+        n = len(df)
+        final_ub = np.zeros(n)
+        final_lb = np.zeros(n)
+        supertrend = np.zeros(n)
+        direction = np.ones(n, dtype=int)
+
+        if n > 0:
+            final_ub[0] = basic_ub_vals[0]
+            final_lb[0] = basic_lb_vals[0]
+            supertrend[0] = final_ub[0]
+            direction[0] = -1
+
+        for i in range(1, n):
+            # Final Upper Band
+            if basic_ub_vals[i] < final_ub[i-1] or close_vals[i-1] > final_ub[i-1]:
+                final_ub[i] = basic_ub_vals[i]
+            else:
+                final_ub[i] = final_ub[i-1]
+
+            # Final Lower Band
+            if basic_lb_vals[i] > final_lb[i-1] or close_vals[i-1] < final_lb[i-1]:
+                final_lb[i] = basic_lb_vals[i]
+            else:
+                final_lb[i] = final_lb[i-1]
+
+            # Calculate Direction
+            if direction[i-1] == 1:
+                if close_vals[i] < final_lb[i]:
+                    direction[i] = -1
+                    supertrend[i] = final_ub[i]
+                else:
+                    direction[i] = 1
+                    supertrend[i] = final_lb[i]
+            else:
+                if close_vals[i] > final_ub[i]:
+                    direction[i] = 1
+                    supertrend[i] = final_lb[i]
+                else:
+                    direction[i] = -1
+                    supertrend[i] = final_ub[i]
+
+        return pd.DataFrame(
+            {
+                "Supertrend": supertrend,
+                "Supertrend_Direction": direction,
+            },
+            index=df.index,
+        )
+
     @classmethod
     def compute_all_indicators(cls, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Validates columns and calculates EMA (20, 50, 200), RSI, MACD, Bollinger Bands, ATR, VWAP, and ADX.
+        Validates columns and calculates EMA (20, 50, 200), RSI, MACD, Bollinger Bands, ATR, VWAP, ADX, and Supertrend.
         Returns a new DataFrame combining the raw data with all calculated indicators.
         """
         cls._validate_columns(df)
@@ -211,6 +284,11 @@ class TechnicalIndicatorEngine:
 
         # ADX (14)
         res["ADX_14"] = cls.calculate_adx(df, period=14)
+
+        # Supertrend (10, 3.0)
+        st_df = cls.calculate_supertrend(df, period=10, multiplier=3.0)
+        res["Supertrend"] = st_df["Supertrend"]
+        res["Supertrend_Direction"] = st_df["Supertrend_Direction"]
 
         logger.info("Successfully calculated all technical indicators.")
         return res
