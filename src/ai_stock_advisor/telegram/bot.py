@@ -333,7 +333,7 @@ def handle_option_recommendation(message: telebot.types.Message) -> None:
         )
         bot.reply_to(message, trade_recommendation, parse_mode="Markdown")
     except Exception as exc:
-        bot.reply_to(message, f"❌ Failed running option analysis for '{args}': {exc}")
+        bot.reply_to(message, f"❌ Failed running option analysis for '{args}': {exc}", parse_mode="")
 
 
 @bot.message_handler(commands=["opportunities"])
@@ -379,7 +379,7 @@ def handle_opportunities(message: telebot.types.Message) -> None:
         bot.reply_to(message, msg, parse_mode="Markdown")
         
     except Exception as exc:
-        bot.reply_to(message, f"❌ Failed loading morning opportunities: {exc}")
+        bot.reply_to(message, f"❌ Failed loading morning opportunities: {exc}", parse_mode="")
 
 
 @bot.message_handler(func=lambda msg: msg.text in (
