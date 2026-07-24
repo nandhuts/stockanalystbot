@@ -57,6 +57,66 @@ class DailyScan(Base):
     recommendation = Column(String, nullable=False)  # JSON-serialized detailed suggestions (SL, Targets, position size, etc.)
 
 
+class WatchlistItem(Base):
+    """
+    WatchlistItem Table Schema.
+    Tracks watched symbols for users' custom notifications.
+    """
+    __tablename__ = "watchlist_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_chat_id = Column(String, index=True, nullable=False)
+    ticker = Column(String, index=True, nullable=False)
+    added_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PortfolioPosition(Base):
+    """
+    PortfolioPosition Table Schema.
+    Stores user holdings.
+    """
+    __tablename__ = "portfolio_positions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_chat_id = Column(String, index=True, nullable=False)
+    ticker = Column(String, index=True, nullable=False)
+    buy_price = Column(Float, nullable=False)
+    quantity = Column(Float, nullable=False)
+    buy_date = Column(DateTime, default=datetime.utcnow)
+
+
+class TradeJournalEntry(Base):
+    """
+    TradeJournalEntry Table Schema.
+    Logs completed trades for analytics.
+    """
+    __tablename__ = "trade_journal_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_chat_id = Column(String, index=True, nullable=False)
+    ticker = Column(String, index=True, nullable=False)
+    buy_price = Column(Float, nullable=False)
+    sell_price = Column(Float, nullable=False)
+    quantity = Column(Float, nullable=False)
+    profit = Column(Float, nullable=False)
+    buy_date = Column(DateTime, nullable=True)
+    sell_date = Column(DateTime, default=datetime.utcnow)
+
+
+class UserSettings(Base):
+    """
+    UserSettings Table Schema.
+    Persists configuration parameters per Telegram chat session.
+    """
+    __tablename__ = "user_settings"
+
+    telegram_chat_id = Column(String, primary_key=True, index=True)
+    risk_pct = Column(Float, default=2.0)
+    preferred_timeframe = Column(String, default="1d")
+    notification_time = Column(String, default="08:45")
+    trading_style = Column(String, default="Swing")  # Intraday, Swing, Long Term
+
+
 def get_db() -> Generator[Any, None, None]:
     """FastAPI Session injection dependency."""
     db = SessionLocal()
